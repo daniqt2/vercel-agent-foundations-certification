@@ -16,3 +16,13 @@ export const createOrGetSandbox = async (name: string) => {
     return sandbox;
   }
 };
+
+// Manual snapshot test
+export const createSandboxFromSnapshot = async (snapshotId: string) => {
+  const sandbox = await Sandbox.create({
+    source: { type: "snapshot", snapshotId },
+    persistent: false, // throwaway: don't auto-snapshot when it stops
+    timeout: 5 * 60 * 1000, // 5 minutes
+  });
+  return sandbox;
+};
