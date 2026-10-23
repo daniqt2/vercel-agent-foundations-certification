@@ -13,12 +13,25 @@ import {
   searchProducts,
   getAllCategories,
 } from "@/lib/tools";
+import { Sandbox } from "@vercel/sandbox";
 import { createOrGetSandbox, SANDBOX_NAME } from "@/lib/sandbox";
 
 export async function readMemories() {
   const sandbox = await createOrGetSandbox(SANDBOX_NAME);
   const buffer = await sandbox.readFileToBuffer({ path: "memories.md" });
   return buffer ? new TextDecoder().decode(buffer) : null;
+}
+
+// Put the sandbox to sleep once the answer is done. It's persistent, so
+// stopping auto-snapshots it and the next question resumes it.
+async function stopSandboxStep() {
+  "use step";
+  try {
+    const sandbox = await Sandbox.get({ name: SANDBOX_NAME });
+    await sandbox.stop();
+  } catch {
+    // Sandbox doesn't exist or is already stopped, nothing to do
+  }
 }
 
 export const backOfficeInstructions = `You are the back-office assistant for the Vercel swag store. You have read-only access to returns, inventory, sales, and support tickets through tools, and a persistent bash sandbox for computation.
@@ -97,4 +110,6 @@ export async function adminChatFlow(messages: UIMessage[]) {
     messages: modelMessages,
     writable: getWritable<ModelCallStreamPart>(),
   });
+
+  await stopSandboxStep();
 }
